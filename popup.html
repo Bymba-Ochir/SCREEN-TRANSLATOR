@@ -1,0 +1,337 @@
+<!-- popup.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', 'Noto Sans', sans-serif;
+      background: #1e1b4b;
+      width: 380px;
+      height: 300px;
+      overflow: hidden;
+      border-radius: 14px;
+      border: 1px solid rgba(99, 102, 241, 0.5);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    }
+
+    .card {
+      background: linear-gradient(135deg, #1e1b4b 0%, #1e293b 100%);
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header - drag хийж зөөнө */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px 10px;
+      -webkit-app-region: drag;
+      cursor: grab;
+      flex-shrink: 0;
+    }
+
+    .logo {
+      font-size: 13px;
+      font-weight: 600;
+      color: #a5b4fc;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .drag-hint { font-size: 10px; color: #475569; }
+
+    .right-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      -webkit-app-region: no-drag;
+    }
+
+    .lang-badge {
+      background: rgba(99, 102, 241, 0.3);
+      color: #a5b4fc;
+      font-size: 11px;
+      padding: 2px 10px;
+      border-radius: 20px;
+      border: 1px solid rgba(99, 102, 241, 0.4);
+    }
+
+    .confidence { font-size: 10px; color: #64748b; }
+
+    .close-btn {
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: #94a3b8;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 0.2s;
+    }
+    .close-btn:hover { background: rgba(239,68,68,0.4); color: #fff; }
+
+    .divider {
+      height: 1px;
+      background: rgba(255,255,255,0.08);
+      margin: 0 16px;
+      flex-shrink: 0;
+    }
+
+    /* Scroll хийгддэг хэсэг */
+    .scroll-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 16px;
+      -webkit-app-region: no-drag;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(99,102,241,0.4) transparent;
+    }
+
+    .scroll-area::-webkit-scrollbar {
+      width: 4px;
+    }
+    .scroll-area::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .scroll-area::-webkit-scrollbar-thumb {
+      background: rgba(99,102,241,0.4);
+      border-radius: 4px;
+    }
+    .scroll-area::-webkit-scrollbar-thumb:hover {
+      background: rgba(99,102,241,0.7);
+    }
+
+    .section-label {
+      font-size: 10px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 4px;
+    }
+
+    .original-text {
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.5;
+      margin-bottom: 12px;
+      word-break: break-word;
+    }
+
+    .translated-text {
+      font-size: 15px;
+      color: #e2e8f0;
+      font-weight: 500;
+      line-height: 1.6;
+      margin-bottom: 14px;
+      word-break: break-word;
+    }
+
+    /* Actions - доод хэсэгт байна */
+    .actions-bar {
+      padding: 10px 16px;
+      display: flex;
+      gap: 8px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      flex-shrink: 0;
+      -webkit-app-region: no-drag;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 7px 10px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .btn-copy {
+      background: rgba(99, 102, 241, 0.35);
+      color: #a5b4fc;
+      border: 1px solid rgba(99, 102, 241, 0.4);
+    }
+    .btn-copy:hover { background: rgba(99, 102, 241, 0.55); }
+
+    .btn-close {
+      background: rgba(255,255,255,0.08);
+      color: #64748b;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .btn-close:hover { background: rgba(255,255,255,0.15); color: #94a3b8; }
+
+    /* Timer bar */
+    .timer-bar {
+      height: 2px;
+      background: rgba(99, 102, 241, 0.15);
+      flex-shrink: 0;
+    }
+    .timer-fill {
+      height: 100%;
+      background: #6366f1;
+      width: 100%;
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      color: #64748b;
+      font-size: 14px;
+      padding: 30px 0;
+    }
+    .dot {
+      width: 6px; height: 6px;
+      background: #6366f1;
+      border-radius: 50%;
+      display: inline-block;
+      margin: 0 2px;
+      animation: bounce 1.2s infinite ease-in-out;
+    }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%,80%,100% { transform: scale(0.6); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    #copy-feedback {
+      display: none;
+      font-size: 11px;
+      color: #4ade80;
+      text-align: center;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+
+    <!-- Header: drag хийж зөөнө -->
+    <div class="header">
+      <div class="logo">
+        🔤 SnapTranslate
+        <span class="drag-hint">⠿</span>
+      </div>
+      <div class="right-header">
+        <span class="lang-badge" id="lang-badge">...</span>
+        <span class="confidence" id="conf-badge"></span>
+        <button class="close-btn" onclick="window.electronAPI.closePopup()">✕</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Scroll хийгддэг текст хэсэг -->
+    <div class="scroll-area" id="scroll-area">
+      <div class="loading">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        <div style="margin-top:8px;font-size:13px;">Орчуулж байна...</div>
+      </div>
+    </div>
+
+    <!-- Доод товчнууд -->
+    <div class="actions-bar" id="actions-bar" style="display:none;">
+      <button class="btn btn-copy" onclick="copyText()">📋 Хуулах</button>
+      <button class="btn btn-close" onclick="window.electronAPI.closePopup()">✕ Хаах</button>
+      <div id="copy-feedback">✅ Хуулагдлаа!</div>
+    </div>
+
+    <!-- Timer bar -->
+    <div class="timer-bar">
+      <div class="timer-fill" id="timer-fill"></div>
+    </div>
+
+  </div>
+
+  <script>
+    const LANG_NAMES = {
+      'ja': '🇯🇵 Япон', 'ko': '🇰🇷 Солонгос',
+      'en': '🇺🇸 Англи', 'zh-CN': '🇨🇳 Хятад',
+      'zh': '🇨🇳 Хятад', 'auto': '🌐 Auto'
+    }
+
+    const scrollArea = document.getElementById('scroll-area')
+    const timerFill = document.getElementById('timer-fill')
+
+    function startTimer(ms) {
+      timerFill.style.transition = 'none'
+      timerFill.style.width = '100%'
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        timerFill.style.transition = `width ${ms}ms linear`
+        timerFill.style.width = '0%'
+      }))
+    }
+
+    function stopTimer() {
+      const cur = timerFill.getBoundingClientRect().width
+      const par = timerFill.parentElement.getBoundingClientRect().width
+      timerFill.style.transition = 'none'
+      timerFill.style.width = (par > 0 ? cur / par * 100 : 100) + '%'
+    }
+
+    // Scroll area hover → timer зогсоо
+    scrollArea.addEventListener('mouseenter', () => {
+      stopTimer()
+      window.electronAPI.hoverPopup()
+    })
+    scrollArea.addEventListener('mouseleave', () => {
+      startTimer(2500)
+      window.electronAPI.leavePopup()
+    })
+
+    window.electronAPI.onLoading(() => {
+      document.getElementById('lang-badge').textContent = '...'
+      document.getElementById('conf-badge').textContent = ''
+      document.getElementById('scroll-area').innerHTML = `
+        <div class="loading">
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          <div style="margin-top:8px;font-size:13px;">Боловсруулж байна...</div>
+        </div>
+      `
+      document.getElementById('actions-bar').style.display = 'none'
+    })
+
+    window.electronAPI.onResult((data) => {
+      const { original, translated, lang, confidence } = data
+
+      document.getElementById('lang-badge').textContent =
+        LANG_NAMES[lang] || `🌐 ${lang}`
+
+      if (confidence) {
+        document.getElementById('conf-badge').textContent = `${confidence}%`
+      }
+
+      scrollArea.innerHTML = `
+        <div class="section-label">Эх текст</div>
+        <div class="original-text">${escapeHtml(original)}</div>
+        <div class="section-label">Монгол орчуулга</div>
+        <div class="translated-text" id="translated">${escapeHtml(translated)}</div>
+      `
+
+      document.getElementById('actions-bar').style.display = 'flex'
+      startTimer(2500)
+    })
+
+    function copyText() {
+      const el = document.getElementById('translated')
+      if (!el) return
+      navigator.clipboard.writeText(el.textContent).then(() => {
+        const fb = document.getElementById('copy-feedback')
+        fb.style.display = 'block'
+        setTimeout(() => fb.style.display = 'none', 2000)
+      })
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!-- overlay.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.35);
+      cursor: crosshair;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    #hint {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-family: 'Segoe UI', sans-serif;
+      font-size: 14px;
+      pointer-events: none;
+      letter-spacing: 0.5px;
+    }
+
+    #hint span {
+      color: #60a5fa;
+      font-weight: bold;
+    }
+
+    #selection-box {
+      position: fixed;
+      border: 2px solid #3b82f6;
+      background: rgba(59, 130, 246, 0.08);
+      pointer-events: none;
+      display: none;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.2);
+    }
+
+    /* Corner handles */
+    #selection-box::before,
+    #selection-box::after {
+      content: '';
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: #3b82f6;
+    }
+    #selection-box::before { top: -4px; left: -4px; }
+    #selection-box::after  { bottom: -4px; right: -4px; }
+
+    #size-label {
+      position: fixed;
+      background: rgba(0,0,0,0.7);
+      color: #60a5fa;
+      font-size: 11px;
+      font-family: monospace;
+      padding: 2px 8px;
+      border-radius: 4px;
+      pointer-events: none;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="hint">
+    🎯 Drag хийж хэсэг сонго &nbsp;|&nbsp; <span>ESC</span> → болих
+  </div>
+  <div id="selection-box"></div>
+  <div id="size-label"></div>
+
+  <script>
+    const box = document.getElementById('selection-box')
+    const sizeLabel = document.getElementById('size-label')
+
+    let startX = 0, startY = 0
+    let isDragging = false
+
+    document.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return
+      startX = e.clientX
+      startY = e.clientY
+      isDragging = true
+
+      box.style.display = 'block'
+      box.style.left = startX + 'px'
+      box.style.top = startY + 'px'
+      box.style.width = '0px'
+      box.style.height = '0px'
+
+      sizeLabel.style.display = 'block'
+    })
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return
+
+      const currX = e.clientX
+      const currY = e.clientY
+
+      const left   = Math.min(startX, currX)
+      const top    = Math.min(startY, currY)
+      const width  = Math.abs(currX - startX)
+      const height = Math.abs(currY - startY)
+
+      box.style.left   = left + 'px'
+      box.style.top    = top + 'px'
+      box.style.width  = width + 'px'
+      box.style.height = height + 'px'
+
+      // Size label
+      sizeLabel.style.left = (left + 4) + 'px'
+      sizeLabel.style.top  = (top - 20 < 0 ? top + 4 : top - 20) + 'px'
+      sizeLabel.textContent = `${width} × ${height}`
+    })
+
+    document.addEventListener('mouseup', (e) => {
+      if (!isDragging) return
+      isDragging = false
+
+      const left   = Math.min(startX, e.clientX)
+      const top    = Math.min(startY, e.clientY)
+      const width  = Math.abs(e.clientX - startX)
+      const height = Math.abs(e.clientY - startY)
+
+      box.style.display = 'none'
+      sizeLabel.style.display = 'none'
+
+      // Хэтэрхий жижиг сонголт → алгасах
+      if (width < 10 || height < 10) {
+        window.electronAPI.cancelOverlay()
+        return
+      }
+
+      window.electronAPI.sendSelection({ x: left, y: top, w: width, h: height })
+    })
+
+    // ESC → болих
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        window.electronAPI.cancelOverlay()
+      }
+    })
+  </script>
+</body>
+</html>
